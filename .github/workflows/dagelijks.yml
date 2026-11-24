@@ -3,7 +3,12 @@ name: Dagelijkse energiecheck
 on:
   schedule:
     - cron: '23 4 * * *'   # elke dag rond 05:23 (winter) / 06:23 (zomer) Nederlandse tijd
-  workflow_dispatch: {}     # handmatig starten via 'Run workflow' (of de knop in de app)
+  workflow_dispatch:        # handmatig starten via 'Run workflow' (of de knop in de app)
+    inputs:
+      testmelding:
+        description: 'Stuur een testmelding naar je telefoon'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -49,6 +54,7 @@ jobs:
           PROFIEL_JSON: ${{ secrets.PROFIEL_JSON }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           MELDING_EMAIL: ${{ secrets.MELDING_EMAIL }}
+          TESTMELDING: ${{ inputs.testmelding }}
           APP_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
         run: |
           mkdir -p .staat
