@@ -1,4 +1,4 @@
-import { analyse, waarschuwingen, zekerheid, CATEGORIEEN } from './calc.js';
+import { analyse, waarschuwingen, zekerheid, jaarSchatting } from './calc.js';
 import { LEEG_PROFIEL, ANWB_DYNAMISCH, STANDAARD_INSTELLINGEN } from './standaard.js';
 
 {
@@ -58,6 +58,7 @@ async function laadData(handmatig) {
     const [t, a, p] = await Promise.all([haal('data/tarieven.json'), haal('data/aanbiedingen.json'), haal('data/prijzen.json').catch(() => null)]);
     data.tarieven = t; data.basisAanbod = a.aanbiedingen || []; data.prijzen = p && p.bijgewerkt ? p : null; data.prijsFouten = p?.fouten || [];
     data.geladen = new Date().toISOString(); data.fout = null;
+    if (standBijStart && profielCompleet()) { standBijStart = false; try { history.replaceState(null, '', '#overzicht'); } catch {} setTimeout(openStand, 300); }
     if (handmatig) toast(data.prijzen ? 'Bijgewerkt: beursprijzen van ' + datumNL(data.prijzen.bijgewerkt, true) : 'Bijgewerkt. Nog geen beursprijzen beschikbaar.');
   } catch (e) {
     data.fout = 'Nieuwe gegevens laden lukte niet (' + e.message + '). Je ziet de laatst bewaarde versie.';
@@ -137,6 +138,7 @@ function renderOverzicht() {
     ${verloopKaart()}
    </div>
    <div>
+    ${standKaart()}
     ${w.length ? `<div class="kaart"><h3>Aandachtspunten</h3><ul class="melding">${w.map((x) => `<li class="${esc(x.ernst)}">${esc(x.tekst)}</li>`).join('')}</ul></div>` : ''}
     <div class="kaart"><h3>Beursprijs ${i('beurs')}</h3>
       ${nu ? `<p>Nu <b>${euro(nu.p * 1.21, 3)}</b> per kWh <span class="klein">(incl. btw, zonder opslag en belasting)</span></p><div class="fig" id="koers"></div>` : '<p class="klein">Geen actuele uurprijzen beschikbaar.</p>'}
@@ -152,10 +154,80 @@ function renderOverzicht() {
    </div>
   </div>`;
   $('#vernieuw').onclick = () => laadData(true);
+  el.querySelectorAll('[data-stand]').forEach((k) => (k.onclick = openStand));
   el.querySelectorAll('[data-ga]').forEach((k) => (k.onclick = () => ga(k.dataset.ga)));
   el.querySelectorAll('[data-open]').forEach((k) => (k.onclick = () => { openOptie = k.dataset.open; renderVergelijken(); ga('vergelijken'); $('#vergelijken .optie.open')?.scrollIntoView({ block: 'start' }); }));
   if (nu) tekenKoers($('#koers'));
   if ($('#verloop')) tekenVerloop($('#verloop'));
+}
+
+function standDagen() {
+  const d = staat.profiel.ijking?.datum; if (!d) return null;
+  return Math.round((Date.parse(vandaag()) - Date.parse(d)) / 86400000);
+}
+function standKaart() {
+  const ij = staat.profiel.ijking || {}, dg = standDagen(), oud = dg == null || dg > 35;
+  return `<div class="kaart stand ${oud ? 'oud' : ''}"><div class="regel" style="justify-content:space-between"><span><b>Stand uit de ANWB-app</b> ${i('ijken')}<span class="uitleg">${dg == null ? 'Nog niet ingevuld' : `Laatst bijgewerkt ${dg === 0 ? 'vandaag' : dg === 1 ? 'gisteren' : dg + ' dagen geleden'} (${datumNL(ij.datum)}, ${euro(ij.kosten || 0)})`}${oud ? ' · tijd om bij te werken' : ''}</span></span>
+    <button class="knop ${oud ? 'accent' : 'licht'}" data-stand>Stand bijwerken</button></div></div>`;
+}
+
+// ---------- venster: stand bijwerken
+let standConcept = null;
+function openStand() {
+  const ij = staat.profiel.ijking || {};
+  standConcept = { datum: vandaag(), kosten: null, stroomAfname: null, teruglevering: null, gas: null, jaarOok: true };
+  const v = $('#standVenster');
+  v.querySelector('.blad').innerHTML = `<h3>Stand bijwerken</h3>
+    <p class="klein">Open de ANWB-app en neem de cijfers van <b>dit jaar tot nu toe</b> over (sinds 1 januari). Grijze getallen zijn je vorige stand${ij.datum ? ' van ' + datumNL(ij.datum) : ''}.</p>
+    <form id="standForm" onsubmit="return false"><div class="velden">
+      ${sveld('datum', 'Stand op datum', 'datum')}
+      ${sveld('kosten', 'Kosten tot nu toe', 'getal', { voor: '€', ph: ij.kosten })}
+      ${sveld('stroomAfname', 'Stroom van het net', 'getal', { na: 'kWh', ph: ij.stroomAfname })}
+      ${sveld('teruglevering', 'Teruglevering', 'getal', { na: 'kWh', ph: ij.teruglevering })}
+      ${staat.profiel.gas > 0 ? sveld('gas', 'Gas', 'getal', { na: 'm³', ph: ij.gas }) : ''}
+    </div><div id="standVoorbeeld" class="klein"></div>
+    <div class="knoppen"><button class="knop accent" id="standOpslaan" type="button">Opslaan</button><button class="knop licht" id="standAnnuleer" type="button">Annuleren</button></div></form>`;
+  v.hidden = false;
+  koppelVelden($('#standForm'), standConcept, standVoorbeeld);
+  v.querySelectorAll('input[data-soort=getal]').forEach((x) => (x.oninput = () => { const w = leesGetal(x.value, x.dataset.groot === '1'); if (!Number.isNaN(w)) { zetPad(standConcept, x.dataset.pad, w); standVoorbeeld(); } }));
+  $('#standAnnuleer').onclick = () => (v.hidden = true);
+  $('#standOpslaan').onclick = bewaarStand;
+  standVoorbeeld();
+  setTimeout(() => $('#s-kosten')?.focus(), 50);
+}
+function sveld(pad, label, soort, extra = {}) {
+  const id = 's-' + pad, w = standConcept[pad];
+  return `<div class="veld"><label for="${id}">${esc(label)}</label><div class="invoer">${extra.voor ? `<span>${esc(extra.voor)}</span>` : ''}<input id="${id}" type="${soort === 'datum' ? 'date' : 'text'}" ${soort === 'getal' ? 'inputmode="decimal" autocomplete="off"' : ''} data-pad="${pad}" data-soort="${soort}" data-groot="${isGroot(extra) ? 1 : 0}" value="${esc(soort === 'getal' ? toonGetal(w) : w ?? '')}" ${extra.ph != null ? `placeholder="${esc(getal(extra.ph))}"` : ''}>${extra.na ? `<span>${esc(extra.na)}</span>` : ''}</div></div>`;
+}
+function standCompleet() { const c = standConcept; return c.datum && c.kosten > 0 && c.stroomAfname > 0 && c.teruglevering != null && (staat.profiel.gas > 0 ? c.gas != null : true); }
+function standVoorbeeld() {
+  const el = $('#standVoorbeeld'); if (!el) return;
+  if (!standCompleet()) { el.innerHTML = '<p>Vul alle velden in om je verwachte jaarverbruik te zien.</p>'; return; }
+  const p = staat.profiel, js = jaarSchatting(standConcept, p);
+  const rij = (l, oud, nieuw, e) => `<tr><td>${l}</td><td class="bedrag">${getal(oud || 0)} ${e}</td><td class="bedrag"><b>${getal(nieuw)} ${e}</b></td></tr>`;
+  el.innerHTML = `<p><b>Verwacht jaarverbruik</b> (met een seizoenspatroon doorgetrokken naar 31 december):</p>
+    <table><thead><tr><th></th><th class="bedrag">nu</th><th class="bedrag">nieuw</th></tr></thead><tbody>
+    ${rij('Stroom van het net', p.stroomAfname, js.stroomAfname, 'kWh')}${rij('Teruglevering', p.teruglevering, js.teruglevering, 'kWh')}${p.gas > 0 ? rij('Gas', p.gas, js.gas, 'm³') : ''}</tbody></table>
+    <p>Laden van de auto tot nu toe geschat op ${getal(js.laadTotNu)} kWh (${getal(p.laadKwh || 0)} kWh per jaar, gelijkmatig verdeeld).</p>
+    <div class="schakel"><input type="checkbox" id="s-jaarOok" ${js.betrouwbaar && standConcept.jaarOok ? 'checked' : ''}><label for="s-jaarOok">Jaarverbruik hiermee bijwerken</label></div>
+    ${js.betrouwbaar ? '' : '<p>Het is nog vroeg in het jaar: deze schatting is grof. Advies: laat je huidige jaarverbruik staan.</p>'}`;
+  standConcept.jaarOok = js.betrouwbaar && standConcept.jaarOok;
+  $('#s-jaarOok').onchange = (e) => (standConcept.jaarOok = e.target.checked);
+}
+function bewaarStand() {
+  $('#standForm').querySelectorAll('[data-pad]').forEach((x) => x.onchange());
+  if (!standCompleet()) return toast('Vul alle velden in');
+  if (standConcept.datum > vandaag()) return toast('De datum ligt in de toekomst');
+  const p = staat.profiel, c = standConcept, js = jaarSchatting(c, p);
+  p.ijking = { datum: c.datum, vanaf: c.datum.slice(0, 4) + '-01-01', kosten: c.kosten, stroomAfname: c.stroomAfname, teruglevering: c.teruglevering, gas: c.gas ?? 0, laadKwh: js.laadTotNu };
+  if (c.jaarOok) { p.stroomAfname = js.stroomAfname; p.teruglevering = js.teruglevering; if (p.gas > 0) p.gas = js.gas; }
+  (staat.standen ||= []).push({ ...p.ijking });
+  bewaar(true); render();
+  $('#standVenster .blad').innerHTML = `<h3>Stand opgeslagen</h3><p>De vergelijking is opnieuw berekend${c.jaarOok ? ' met je nieuwe jaarverbruik' : ''}.</p>
+    <p class="klein">Laat de dagelijkse melding ook met deze cijfers rekenen: kopieer je gegevens en plak ze in GitHub als geheim <code>PROFIEL_JSON</code>.</p>
+    <div class="knoppen"><button class="knop accent" id="standKop" type="button">Kopieer gegevens voor GitHub</button>${repoUrl() ? `<a class="knop licht" href="${esc(repoUrl())}/settings/secrets/actions" target="_blank" rel="noopener">Open GitHub-geheimen</a>` : ''}<button class="knop licht" id="standKlaar" type="button">Klaar</button></div>`;
+  $('#standKop').onclick = () => kopieer(JSON.stringify(exportObject()), 'Gekopieerd. Plak het in GitHub als PROFIEL_JSON.');
+  $('#standKlaar').onclick = () => ($('#standVenster').hidden = true);
 }
 
 function verloopKaart() {
@@ -255,16 +327,18 @@ function naWijzigingStaat(inp) {
   laatste = bereken();
   const R = { overzicht: renderOverzicht, vergelijken: renderVergelijken, gegevens: renderGegevens, aanbod: renderAanbod, meer: renderMeer };
   for (const [id, f] of Object.entries(R)) if (id !== sec) f();
-  if (sec === 'gegevens') { const z = $('#samenvatting'); if (z) z.innerHTML = samenvatting(); }
+  if (sec === 'gegevens') { const z = $('#samenvatting'); if (z) { z.innerHTML = samenvatting(); z.querySelectorAll('[data-stand]').forEach((k) => (k.onclick = openStand)); } }
 }
 
 // ---------- formulieren
+const isGroot = (extra) => ['kWh', 'm³', 'dagen', 'mnd', '/jaar'].includes(extra.na) || (extra.voor === '€' && !extra.na);
 const pakPad = (obj, pad) => pad.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 function zetPad(obj, pad, w) { const d = pad.split('.'); const l = d.pop(); let o = obj; for (const k of d) o = o[k] ??= {}; o[l] = w; }
-function leesGetal(t) {
+// groot = hoeveelheden en bedragen (kWh, m³, €): een punt is daar een duizendtal-scheiding (1.575 = 1575).
+function leesGetal(t, groot) {
   const s = String(t).trim().replace(/[€\s]/g, '');
   if (s === '') return null;
-  const n = Number(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s);
+  const n = Number(s.includes(',') || (groot && /^\d{1,3}(\.\d{3})+$/.test(s)) ? s.replace(/\./g, '').replace(',', '.') : s);
   return Number.isFinite(n) ? n : NaN;
 }
 function toonGetal(w, soort) {
@@ -281,7 +355,7 @@ function veld(pad, label, soort = 'getal', extra = {}) {
   else {
     const type = soort === 'datum' ? 'date' : 'text';
     const num = soort === 'getal' || soort === 'pct';
-    input = `<div class="invoer">${extra.voor ? `<span>${esc(extra.voor)}</span>` : ''}<input id="${id}" type="${type}" ${num ? 'inputmode="decimal" autocomplete="off"' : ''} data-pad="${pad}" data-soort="${soort}" value="${esc(num ? toonGetal(w, soort) : w ?? '')}" ${extra.ph ? `placeholder="${esc(extra.ph)}"` : ''}>${extra.na ? `<span>${esc(extra.na)}</span>` : ''}</div>`;
+    input = `<div class="invoer">${extra.voor ? `<span>${esc(extra.voor)}</span>` : ''}<input id="${id}" type="${type}" ${num ? 'inputmode="decimal" autocomplete="off"' : ''} data-pad="${pad}" data-soort="${soort}" data-groot="${isGroot(extra) ? 1 : 0}" value="${esc(num ? toonGetal(w, soort) : w ?? '')}" ${extra.ph ? `placeholder="${esc(extra.ph)}"` : ''}>${extra.na ? `<span>${esc(extra.na)}</span>` : ''}</div>`;
   }
   return `<div class="veld"><label for="${id}">${esc(label)}${info}</label>${input}${extra.hint ? `<span class="klein">${esc(extra.hint)}</span>` : ''}</div>`;
 }
@@ -292,7 +366,7 @@ function koppelVelden(root, doel = staat, naWijziging = naWijzigingStaat) {
       if (s === 'aan') w = inp.checked;
       else if (s === 'tekst' || s === 'datum') w = inp.value.trim() || null;
       else {
-        w = leesGetal(inp.value);
+        w = leesGetal(inp.value, inp.dataset.groot === '1');
         if (Number.isNaN(w)) { toast('Dat is geen getal. Gebruik bijvoorbeeld 0,018'); inp.value = toonGetal(pakPad(doel, inp.dataset.pad), s); return; }
         if (s === 'pct' && w != null) w = w / 100;
       }
@@ -307,6 +381,7 @@ function samenvatting() {
   return `${kern('Stroom van het net', getal(p.stroomAfname || 0) + ' kWh/jaar')}${kern('waarvan laden auto', getal(p.laadKwh || 0) + ' kWh')}
     ${kern('Teruglevering', getal(p.teruglevering || 0) + ' kWh/jaar')}${kern('Gas', getal(p.gas || 0) + ' m³/jaar')}
     ${kern('Contract', esc(h.naam))}${kern('Geijkt op', ij.kosten ? euro(ij.kosten) + ' t/m ' + datumNL(ij.datum) : 'nee')}
+    <div class="knoppen"><button class="knop licht" data-stand type="button">Stand bijwerken</button></div>
     <p class="klein">Alles staat alleen op dit toestel en wordt direct bewaard. Pas je iets aan? Kopieer dan ook je gegevens opnieuw naar GitHub (zie Meldingen).</p>`;
 }
 const kern = (label, waarde) => `<div class="kern"><span>${esc(label)}</span><b>${waarde}</b></div>`;
@@ -361,6 +436,7 @@ function renderGegevens() {
   </details>`;
   for (const id of open) { const d = el.querySelector('#' + id); if (d) d.open = true; }
   koppelVelden(el);
+  el.querySelectorAll('[data-stand]').forEach((k) => (k.onclick = openStand));
   $('#impBestand').onchange = (e) => importeerBestand(e.target.files[0]);
   $('#kopieer').onclick = () => kopieer(JSON.stringify(exportObject(), null, 1), 'Back-up gekopieerd');
   $('#deel').onclick = () => deelBackup();
@@ -375,7 +451,7 @@ function cveld(pad, label, soort = 'getal', extra = {}) {
   const w = pakPad(concept, pad), id = 'c-' + pad.replace(/\./g, '-');
   if (soort === 'keuze') return `<div class="veld"><label for="${id}">${esc(label)}</label><select id="${id}" data-pad="${pad}" data-soort="tekst">${extra.opties.map(([v, t]) => `<option value="${esc(v)}" ${v === w ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
   const num = soort === 'getal';
-  return `<div class="veld"><label for="${id}">${esc(label)}</label><div class="invoer">${extra.voor ? `<span>${esc(extra.voor)}</span>` : ''}<input id="${id}" type="${soort === 'datum' ? 'date' : 'text'}" ${num ? 'inputmode="decimal" autocomplete="off"' : ''} data-pad="${pad}" data-soort="${soort}" value="${esc(num ? toonGetal(w) : w ?? '')}">${extra.na ? `<span>${esc(extra.na)}</span>` : ''}</div></div>`;
+  return `<div class="veld"><label for="${id}">${esc(label)}</label><div class="invoer">${extra.voor ? `<span>${esc(extra.voor)}</span>` : ''}<input id="${id}" type="${soort === 'datum' ? 'date' : 'text'}" ${num ? 'inputmode="decimal" autocomplete="off"' : ''} data-pad="${pad}" data-soort="${soort}" data-groot="${isGroot(extra) ? 1 : 0}" value="${esc(num ? toonGetal(w) : w ?? '')}">${extra.na ? `<span>${esc(extra.na)}</span>` : ''}</div></div>`;
 }
 function renderAanbod() {
   const el = $('#aanbod'), lijst = aanbiedingen(), m = laatste?.markt;
@@ -450,7 +526,7 @@ function renderMeer() {
   const el = $('#meer'), s = staat.instellingen;
   el.innerHTML = `<h2>Meldingen</h2>
   <form class="kaart" onsubmit="return false"><div class="velden">
-    ${veld('instellingen.meldingen', 'Meldingen aan', 'aan')}${veld('instellingen.weekoverzicht', 'Elke maandag een kort overzicht', 'aan')}
+    ${veld('instellingen.meldingen', 'Meldingen aan', 'aan')}${veld('instellingen.weekoverzicht', 'Elke maandag een kort overzicht', 'aan')}${veld('instellingen.standHerinnering', 'Op de 1e van de maand: herinnering om je stand bij te werken', 'aan')}
     ${veld('instellingen.drempel', 'Melden vanaf besparing', 'getal', { voor: '€', na: '/jaar', info: 'drempel' })}
     ${veld('instellingen.dagenVoorEinde', 'Waarschuwen voor einde contract', 'getal', { na: 'dagen' })}
   </div></form>
@@ -462,7 +538,7 @@ function renderMeer() {
       <li>Zet je gegevens in GitHub als geheim <code>PROFIEL_JSON</code>: <button class="knop accent" id="kopProfiel" type="button">Kopieer gegevens voor GitHub</button></li>
       <li>Test het: GitHub → Actions → Dagelijkse energiecheck → Run workflow → vink <i>Stuur een testmelding</i> aan.${repoUrl() ? ` <a href="${esc(repoUrl())}/actions/workflows/dagelijks.yml" target="_blank" rel="noopener">Open op GitHub</a>` : ''}</li>
     </ol>
-    <p class="klein">Je krijgt alleen een melding bij iets nieuws: een overstapkans boven je drempel (opnieuw bij €25 meer of na 30 dagen), een contract dat bijna afloopt of een aanbieding die bijna verloopt. Onder de drempel blijft het stil. Er worden nooit berichten namens jou verstuurd.</p>
+    <p class="klein">Op de 1e van de maand krijg je (als dat aanstaat) een herinnering om je stand bij te werken. Verder alleen bij iets nieuws: een overstapkans boven je drempel (opnieuw bij €25 meer of na 30 dagen), een contract dat bijna afloopt of een aanbieding die bijna verloopt. Onder de drempel blijft het stil. Er worden nooit berichten namens jou verstuurd.</p>
     <details><summary>Andere kanalen</summary><table class="stack"><thead><tr><th>Kanaal</th><th>Kosten</th><th>Privacy</th></tr></thead><tbody>
       <tr><td><b>In de app</b></td><td>gratis</td><td>blijft op je toestel</td></tr>
       <tr><td><b>Push via ntfy</b></td><td>gratis</td><td>meldingstekst gaat via ntfy.sh</td></tr>
@@ -536,7 +612,8 @@ document.addEventListener('click', (e) => {
 });
 $('#uitlegSluit').onclick = () => (venster.hidden = true);
 venster.addEventListener('click', (e) => { if (e.target === venster) venster.hidden = true; });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') venster.hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { venster.hidden = true; $('#standVenster').hidden = true; } });
+$('#standVenster').addEventListener('click', (e) => { if (e.target.id === 'standVenster') e.target.hidden = true; });
 
 function ga(tab) {
   document.querySelectorAll('section.scherm').forEach((s) => s.classList.toggle('actief', s.id === tab));
@@ -552,6 +629,7 @@ addEventListener('online', () => laadData()); addEventListener('offline', render
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && data.geladen && Date.now() - Date.parse(data.geladen) > 3600e3) laadData(); });
 const start = location.hash.slice(1);
 if (['overzicht', 'vergelijken', 'gegevens', 'aanbod', 'meer'].includes(start)) ga(start);
+let standBijStart = start === 'stand';
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 render();
 laadData();

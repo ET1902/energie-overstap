@@ -104,3 +104,17 @@ test('onvolledig contract wordt gemeld en niet berekend', () => {
   const res = analyse({ profiel: P, huidig: { ...ANWB_DYNAMISCH, type: 'vast' }, aanbiedingen: A, prijzen: null, tarieven: T, instellingen: {}, vandaagISO: '2026-11-24' });
   assert.ok(res.fout && res.fout.includes('stroomtarief'));
 });
+
+import { jaarSchatting, verstrekenAandeel } from '../calc.js';
+test('jaarschatting uit een stand eind november', () => {
+  const s = jaarSchatting({ datum: '2026-11-24', stroomAfname: 5500, teruglevering: 3310, gas: 270 }, { laadKwh: 2813, gas: 300 });
+  assert.ok(Math.abs(s.teruglevering - 3400) < 60, String(s.teruglevering));
+  assert.ok(Math.abs(s.gas - 303) < 10, String(s.gas));
+  assert.ok(Math.abs(s.stroomAfname - 6300) < 120, String(s.stroomAfname));
+  assert.ok(s.betrouwbaar);
+});
+test('aandelen lopen van 0 naar 1 en januari is onbetrouwbaar', () => {
+  assert.ok(Math.abs(verstrekenAandeel('2026-12-31', 'zon') - 1) < 1e-9);
+  assert.ok(verstrekenAandeel('2026-06-30', 'zon') > 0.5);
+  assert.equal(jaarSchatting({ datum: '2027-01-20', stroomAfname: 400, teruglevering: 20, gas: 20 }, { laadKwh: 2813 }).betrouwbaar, false);
+});

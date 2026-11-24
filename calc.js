@@ -296,3 +296,42 @@ function fmt4(x) { return '€' + nl(x, 4); }
 function euroNL(x) { return '€ ' + Math.round(x).toLocaleString('nl-NL'); }
 function datumKort(iso) { const [j, m, d] = String(iso).split('-'); return `${+d}-${+m}-${j}`; }
 function nl(x, d) { return Number(x).toFixed(d).replace('.', ','); }
+
+// ---------- Stand bijwerken: van 'tot nu toe' naar een verwacht jaarverbruik
+// Maandaandelen (jan..dec) van een gemiddeld jaar. Zon: typisch Nederlands opbrengstprofiel.
+// Stroom (huis, zonder laden): meer in de winter door verwarmen met de airco. Gas: alleen warm water, licht seizoensgebonden.
+export const SEIZOEN = {
+  zon: [0.02, 0.04, 0.08, 0.12, 0.14, 0.14, 0.14, 0.12, 0.09, 0.06, 0.03, 0.02],
+  huis: [0.125, 0.104, 0.094, 0.073, 0.0625, 0.052, 0.052, 0.052, 0.0625, 0.083, 0.115, 0.125],
+  gas: [0.10, 0.09, 0.09, 0.08, 0.07, 0.07, 0.07, 0.07, 0.08, 0.09, 0.09, 0.10],
+};
+/** Deel van het jaar dat t/m deze datum 'voorbij' is volgens een seizoensprofiel. */
+export function verstrekenAandeel(datumISO, profielNaam) {
+  const d = new Date(datumISO + 'T12:00:00Z'), m = d.getUTCMonth();
+  const dagenInMaand = new Date(Date.UTC(d.getUTCFullYear(), m + 1, 0)).getUTCDate();
+  const w = SEIZOEN[profielNaam], tot = w.reduce((a, x) => a + x, 0);
+  let s = 0; for (let k = 0; k < m; k++) s += w[k];
+  s += w[m] * (d.getUTCDate() / dagenInMaand);
+  return s / tot;
+}
+/**
+ * Schat het jaarverbruik uit een stand 'sinds 1 januari'.
+ * Laden van de auto wordt naar rato van de dagen gerekend (gelijkmatig over het jaar).
+ */
+export function jaarSchatting(stand, profiel) {
+  const jaarStart = new Date(stand.datum.slice(0, 4) + '-01-01T00:00:00Z');
+  const dagen = (new Date(stand.datum + 'T00:00:00Z') - jaarStart) / DAG + 1;
+  const laadTotNu = Math.round((profiel.laadKwh || 0) * Math.min(1, dagen / 365));
+  const aZon = verstrekenAandeel(stand.datum, 'zon'), aHuis = verstrekenAandeel(stand.datum, 'huis'), aGas = verstrekenAandeel(stand.datum, 'gas');
+  const huisTotNu = Math.max(0, stand.stroomAfname - laadTotNu);
+  const out = {
+    laadTotNu,
+    stroomAfname: Math.round(huisTotNu / aHuis + (profiel.laadKwh || 0)),
+    teruglevering: Math.round(stand.teruglevering / aZon),
+    gas: stand.gas == null ? profiel.gas : Math.round(stand.gas / aGas),
+    aandeel: { zon: aZon, huis: aHuis, gas: aGas },
+  };
+  // Vroeg in het jaar is extrapoleren onbetrouwbaar (vooral de zon): dan niet automatisch overnemen.
+  out.betrouwbaar = aHuis >= 0.25 && aZon >= 0.2;
+  return out;
+}

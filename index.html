@@ -117,10 +117,13 @@ ul.onzeker{padding-left:18px;margin:6px 0}
 .optie.uitgezet b{opacity:.55}
 .optie .uitleg{margin-top:2px}
 ol.stappen{padding-left:20px;margin:0 0 10px}ol.stappen li{margin-bottom:12px}
-#uitlegVenster{position:fixed;inset:0;background:rgba(10,20,26,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px}
-#uitlegVenster[hidden]{display:none}
-#uitlegVenster .blad{background:var(--kaart);color:var(--ink);border-radius:16px;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-@media(min-width:700px){#uitlegVenster{align-items:center}}
+#standVenster,#uitlegVenster{position:fixed;inset:0;background:rgba(10,20,26,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px}
+#standVenster[hidden],#uitlegVenster[hidden]{display:none}
+#standVenster .blad{max-height:88vh;overflow:auto}
+#uitlegVenster{z-index:30}
+.kaart.stand.oud{border-color:var(--accent)}
+#standVenster .blad,#uitlegVenster .blad{background:var(--kaart);color:var(--ink);border-radius:16px;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+@media(min-width:700px){#uitlegVenster,#standVenster{align-items:center}}
 @media(max-width:600px){.stack thead{display:none}.stack tr{display:grid;padding-block:8px;border-bottom:1px solid var(--lijn)}.stack td{border:0;padding:2px 0}}
 </style>
 </head>
@@ -144,6 +147,7 @@ ol.stappen{padding-left:20px;margin:0 0 10px}ol.stappen li{margin-bottom:12px}
   <button data-tab="meer"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 004 0"/></svg>Meldingen</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="standVenster" class="venster" hidden role="dialog" aria-modal="true" aria-label="Stand bijwerken"><div class="blad"></div></div>
 <div id="uitlegVenster" hidden role="dialog" aria-modal="true" aria-labelledby="uitlegTitel"><div class="blad"><h3 id="uitlegTitel"></h3><p id="uitlegTekst"></p><button class="knop" id="uitlegSluit" type="button">Begrepen</button></div></div>
 <script type="module" src="app.js"></script>
 </body>

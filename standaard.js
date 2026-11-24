@@ -33,6 +33,7 @@ export const STANDAARD_INSTELLINGEN = {
   dagenVoorEinde: 60,    // melding zoveel dagen voor einde contract
   overstapDagen: 21,     // aangenomen doorlooptijd van een overstap
   meldingen: true,
+  standHerinnering: true, // op de 1e van de maand een herinnering om je stand bij te werken
   ntfyOnderwerp: '',     // geheim onderwerp voor pushmeldingen via ntfy.sh
   repo: '',              // bijv. eric/energie-overstap (voor de knop 'Nu bijwerken')
 };

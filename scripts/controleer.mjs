@@ -50,7 +50,13 @@ if (instellingen.weekoverzicht && new Date().getUTCDay() === 1) {
   berichten.push({ titel: 'Weekoverzicht energie', tekst: `${res.advies.tekst}\nHuidig contract komende 12 mnd: ~€${Math.round(res.basis.totaal)}.`, prioriteit: 2, tags: 'bar_chart' });
 }
 
-// 4. Testmelding op verzoek (Run workflow → 'Stuur een testmelding')
+// 4. Maandelijkse herinnering om de stand uit de ANWB-app bij te werken (op de 1e).
+const dagVanMaand = Number(vandaag.slice(8, 10));
+if (instellingen.standHerinnering !== false && dagVanMaand === 1 && !staat.gemeld['stand:' + vandaag.slice(0, 7)]) {
+  berichten.push({ titel: 'Tijd om je stand bij te werken', tekst: 'Neem de kosten en het verbruik van dit jaar over uit de ANWB-app. Tik hier om de app te openen. Daarna: Meldingen → Kopieer gegevens voor GitHub.', prioriteit: 3, tags: 'memo', pad: '#stand' });
+  staat.gemeld['stand:' + vandaag.slice(0, 7)] = { datum: vandaag };
+}
+// 5. Testmelding op verzoek (Run workflow → 'Stuur een testmelding')
 if (process.env.TESTMELDING === 'true') {
   berichten.push({ titel: 'Testmelding energie-app', tekst: `De meldingen werken.\nHuidig advies: ${res.advies.tekst}`, prioriteit: 3, tags: 'white_check_mark' });
 }
@@ -62,7 +68,7 @@ for (const m of berichten) {
   if (!onderwerp) break;
   // Parameters via de URL (ntfy ondersteunt dat), zodat tekens als € geen probleem geven in HTTP-headers.
   const q = new URLSearchParams({ title: m.titel, priority: String(m.prioriteit), tags: m.tags });
-  if (process.env.APP_URL) q.set('click', process.env.APP_URL);
+  if (process.env.APP_URL) q.set('click', process.env.APP_URL + (m.pad || ''));
   if (process.env.MELDING_EMAIL) q.set('email', process.env.MELDING_EMAIL);
   const r = await fetch(`https://ntfy.sh/${encodeURIComponent(onderwerp)}?${q}`, { method: 'POST', body: m.tekst });
   if (r.ok) verstuurd++; else console.log(`ntfy gaf HTTP ${r.status}: controleer het geheim NTFY_TOPIC.`);
