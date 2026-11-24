@@ -1,39 +1,7 @@
 {
  "peildatum": "2026-11-24",
- "toelichting": "Startlijst met bron per aanbieding. Controleer altijd bij de leverancier; bedragen incl. btw, excl. energiebelasting.",
+ "toelichting": "Startlijst met bron per aanbieding, gecontroleerd op 24-11-2026. Bedragen incl. btw, excl. energiebelasting. Controleer altijd bij de leverancier.",
  "aanbiedingen": [
-  {
-   "id": "frank",
-   "naam": "Frank Energie dynamisch",
-   "leverancier": "Frank Energie",
-   "type": "dynamisch",
-   "stroom": {
-    "opslag": 0.0182,
-    "vast": 7.25,
-    "terugVergoeding": 0.0182,
-    "terugKosten": 0,
-    "terugBtw": true
-   },
-   "gas": {
-    "opslag": 0.0799,
-    "vast": 7.25
-   },
-   "korting": 0,
-   "looptijdMnd": 0,
-   "geldigTot": null,
-   "bron": {
-    "naam": "Frank Energie, eigen vergelijkingstabel",
-    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
-    "soort": "leverancier",
-    "datum": "2026-11-24"
-   },
-   "onzeker": [
-    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
-    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
-    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd.",
-    "Een andere bron noemt €7,00 vaste kosten; Frank noemt ook een mogelijke inkoopvergoeding op teruglevering in de voorwaarden."
-   ]
-  },
   {
    "id": "zonneplan",
    "naam": "Zonneplan dynamisch",
@@ -44,7 +12,8 @@
     "vast": 6.25,
     "terugVergoeding": 0.02,
     "terugKosten": 0,
-    "terugBtw": true
+    "terugBtw": true,
+    "terugBonusPct": 0.1
    },
    "gas": {
     "opslag": 0.08,
@@ -54,46 +23,45 @@
    "looptijdMnd": 0,
    "geldigTot": null,
    "bron": {
-    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
-    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
-    "soort": "derde",
+    "naam": "Zonneplan: tarieven en terugleververgoeding na 2027",
+    "url": "https://www.zonneplan.nl/energie/energiecontract-met-zonnepanelen/",
+    "soort": "leverancier",
     "datum": "2026-11-24"
    },
    "onzeker": [
-    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
-    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
-    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
-   ]
+    "Zonnebonus (10%) geldt alleen overdag bij een positieve prijs en tot 7.500 kWh/jaar; benaderd als 10% over de gemiddelde terugleverprijs."
+   ],
+   "toelichting": "Teruglevering vanaf 2027: marktprijs incl. btw + €0,02 inkoopvergoeding + 10% Zonnebonus. Geen terugleverkosten."
   },
   {
-   "id": "nextenergy",
-   "naam": "NextEnergy dynamisch",
-   "leverancier": "NextEnergy",
+   "id": "frank",
+   "naam": "Frank Energie dynamisch",
+   "leverancier": "Frank Energie",
    "type": "dynamisch",
    "stroom": {
-    "opslag": 0.0219,
-    "vast": 5.99,
+    "opslag": 0.0182,
+    "vast": 6.0,
     "terugVergoeding": 0,
     "terugKosten": 0,
     "terugBtw": true
    },
    "gas": {
     "opslag": 0.0799,
-    "vast": 5.99
+    "vast": 6.0
    },
    "korting": 0,
    "looptijdMnd": 0,
    "geldigTot": null,
    "bron": {
-    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
-    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "naam": "Gaslicht.com, pakket Frank Energie dynamisch (prijswijziging 11-11-2026)",
+    "url": "https://www.gaslicht.com/stroom-vergelijken/frank-energie/groene-stroom-dynamisch-5078",
     "soort": "derde",
-    "datum": "2026-11-24"
+    "datum": "2026-11-11"
    },
    "onzeker": [
-    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
-    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
-    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
+    "Geen terugleverkosten volgens Energievergelijk alleen 'met Slim Sturen'.",
+    "Vaste kosten gas en opslag gas niet bij Frank zelf bevestigd (Frank's eigen tabel noemt €7,25 vaste kosten en €0,0799 gas).",
+    "Frank's eigen tabel noemt €0,0182 extra per teruggeleverde kWh; niet meegerekend tot dit bevestigd is."
    ]
   },
   {
@@ -116,17 +84,43 @@
    "looptijdMnd": 0,
    "geldigTot": null,
    "bron": {
-    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
-    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "naam": "Gaslicht.com, Tibber Groene Stroom Dynamisch (prijswijziging 4-8-2026)",
+    "url": "https://www.gaslicht.com/stroom-vergelijken/tibber/nederlandse-groene-stroom-dynamisch-5093",
     "soort": "derde",
-    "datum": "2026-11-24"
+    "datum": "2026-08-04"
    },
    "onzeker": [
-    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
-    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
-    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd.",
-    "Andere bronnen noemen €6,99 (stroom) + €5,99 (gas) vaste kosten en een opslag van €0,018.",
-    "Tibber betaalt vanaf 2027 volgens derden de kale beursprijs; of daar btw bij zit is onduidelijk."
+    "Bronnen spreken elkaar tegen: opslag €0,018 (Zonneplan), €0,0218 (Overstappen.nl) of €0,0248 (Gaslicht); vaste kosten stroom €5,99 of €6,99.",
+    "Geen extra vergoeding op teruglevering buiten salderen; geen terugleverkosten."
+   ]
+  },
+  {
+   "id": "nextenergy",
+   "naam": "NextEnergy dynamisch",
+   "leverancier": "NextEnergy",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.0219,
+    "vast": 5.99,
+    "terugVergoeding": 0,
+    "terugKosten": 0.01,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.0799,
+    "vast": 5.99
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Keuze.nl en Gaslicht.com, NextEnergy dynamisch (prijswijziging 21-10-2026)",
+    "url": "https://www.keuze.nl/energie/energieleveranciers/nextenergy",
+    "soort": "derde",
+    "datum": "2026-10-21"
+   },
+   "onzeker": [
+    "NextEnergy rekent volgens Keuze.nl een verkoopvergoeding van €0,01 per teruggeleverde kWh (meegerekend als terugleverkosten)."
    ]
   },
   {
@@ -135,29 +129,28 @@
    "leverancier": "Eneco",
    "type": "dynamisch",
    "stroom": {
-    "opslag": 0.0185,
+    "opslag": 0.0189,
     "vast": 7.0,
     "terugVergoeding": 0,
     "terugKosten": 0.0185,
     "terugBtw": true
    },
    "gas": {
-    "opslag": 0.1068,
+    "opslag": 0.11,
     "vast": 7.0
    },
    "korting": 0,
    "looptijdMnd": 0,
    "geldigTot": null,
    "bron": {
-    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
-    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "naam": "Gaslicht.com en Keuze.nl, Eneco Hollandse Wind & Zon dynamisch",
+    "url": "https://www.gaslicht.com/energie-vergelijken/eneco/hollandse-wind-en-zon-en-gas-dynamisch-5199",
     "soort": "derde",
     "datum": "2026-11-24"
    },
    "onzeker": [
-    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
-    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
-    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
+    "Vaste kosten stroom niet bevestigd (€7,00 aangenomen).",
+    "Eneco staat niet in de lijst van dynamische leveranciers zonder terugleverkosten; €0,0185/kWh aangenomen (bron: tabel Frank Energie)."
    ]
   },
   {
@@ -186,10 +179,10 @@
     "datum": "2026-09-01"
    },
    "onzeker": [
-    "Dit zijn de 2026-voorwaarden; voor 2027 kunnen terugleverkosten en tarieven anders zijn.",
+    "Terugleverkosten van 2026 gebruikt; voor vaste contracten liggen ze in 2027 volgens Energievergelijk tussen €0,045 en €0,065 per kWh.",
     "Tarieven omgerekend naar excl. energiebelasting 2026."
    ],
-   "toelichting": "Voorbeeld van een vast/variabel contract, vooral als referentie. Voer echte aanbiedingen in via 'Aanbiedingen'."
+   "toelichting": "Referentie voor een vast contract. Voer echte aanbiedingen in via 'Aanbod'."
   }
  ]
 }

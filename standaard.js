@@ -15,7 +15,7 @@ export const LEEG_PROFIEL = {
 
 export const ANWB_DYNAMISCH = {
   id: 'huidig',
-  naam: 'ANWB Energie dynamisch (huidig)',
+  naam: 'ANWB Energie dynamisch',
   leverancier: 'ANWB Energie',
   type: 'dynamisch',
   stroom: { opslag: 0.018, vast: 8.5, terugVergoeding: 0, terugKosten: 0, terugBtw: true },

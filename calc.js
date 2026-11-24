@@ -54,7 +54,7 @@ export function bepaalMarkt(profiel, prijzen, huidig, tarieven) {
       out.afname = basisMarkt.afname * k; out.terug = basisMarkt.terug * k; out.gas = basisMarkt.gas * k;
       out.nacht = out.afname * nachtRatio;
       out.ijkFactor = k;
-      out.methode = `Geijkt op jouw werkelijke kosten volgens ${huidig.leverancier || 'je leverancier'} (€${ij.kosten} t/m ${ij.datum}): beursprijzen uit ${basis.jaar} × ${nl(k, 2)}.` + (s && s.gem12m ? ' Nachtprijs-verhouding uit actuele beursdata.' : ' Nachtprijs gelijk aan gemiddelde (geen beursdata).');
+      out.methode = `Geijkt op jouw werkelijke kosten volgens ${huidig.leverancier || 'je leverancier'} (${euroNL(ij.kosten)} t/m ${datumKort(ij.datum)}): beursprijzen uit ${basis.jaar} × ${nl(k, 2)}.` + (s && s.gem12m ? ' Nachtprijs-verhouding uit actuele beursdata.' : ' Nachtprijs gelijk aan gemiddelde (geen beursdata).');
       out.peildatum = out.peildatum || ij.datum;
     }
   }
@@ -105,7 +105,7 @@ export function kostenPeriode(contract, profiel, markt, t, fractie) {
   const dyn = contract.type === 'dynamisch' || contract.type === 'huidig-dynamisch';
   const bronSoort = contract.bron && contract.bron.soort === 'leverancier' ? 'bevestigd' : 'schatting';
   const regels = [];
-  const add = (label, bedrag, soort, uitleg) => regels.push({ label, bedrag: r2(bedrag), soort, uitleg });
+  const add = (label, bedrag, soort, uitleg, cat) => regels.push({ label, bedrag: r2(bedrag), soort, uitleg, cat });
 
   // --- Stroom: afname
   let prijsHuis, prijsLaad;
@@ -128,8 +128,9 @@ export function kostenPeriode(contract, profiel, markt, t, fractie) {
   const overschot = terug - salderbaar;
   if (dyn) {
     const terugBeurs = markt.terug * (S.terugBtw === false ? 1 : 1 + BTW);
-    const perKwh = terugBeurs + (S.terugVergoeding || 0) - (S.terugKosten || 0);
-    add('Teruglevering: beursprijs', -terug * perKwh, 'schatting', `${fmtK(terug)} × €${nl(perKwh, 4)} (beurs ${fmt4(terugBeurs)}${S.terugVergoeding ? ' + vergoeding ' + fmt4(S.terugVergoeding) : ''}${S.terugKosten ? ' − kosten ' + fmt4(S.terugKosten) : ''})`);
+    const bonus = (S.terugBonusPct || 0) * Math.max(0, terugBeurs + (S.terugVergoeding || 0));
+    const perKwh = terugBeurs + (S.terugVergoeding || 0) + bonus - (S.terugKosten || 0);
+    add('Teruglevering: beursprijs', -terug * perKwh, 'schatting', `${fmtK(terug)} × €${nl(perKwh, 4)} (beurs ${fmt4(terugBeurs)}${S.terugVergoeding ? ' + vergoeding ' + fmt4(S.terugVergoeding) : ''}${bonus ? ' + bonus ' + Math.round(S.terugBonusPct * 100) + '% ' + fmt4(bonus) : ''}${S.terugKosten ? ' − kosten ' + fmt4(S.terugKosten) : ''})`);
     if (salderbaar > 0) add('Saldering: energiebelasting + opslag terug', -salderbaar * (t.ebStroom + S.opslag), 'bevestigd', `${fmtK(salderbaar)} × €${nl((t.ebStroom + S.opslag), 4)} (alleen t/m 31-12-2026)`);
   } else {
     if (salderbaar > 0) add('Saldering (verrekend tegen tarief + belasting)', -salderbaar * (prijsHuis + t.ebStroom), bronSoort, `${fmtK(salderbaar)} × €${nl((prijsHuis + t.ebStroom), 4)} (alleen t/m 31-12-2026)`);
@@ -157,7 +158,18 @@ export function kostenPeriode(contract, profiel, markt, t, fractie) {
   add('Vermindering energiebelasting', -t.vermindering * f, 'bevestigd', `€${nl(t.vermindering, 2)} per jaar`);
   if (laad > 0 && profiel.laadVergoeding) add('Vergoeding werkgever laden', -laad * profiel.laadVergoeding, 'bevestigd', `${fmtK(laad)} × €${nl(profiel.laadVergoeding, 2)}`);
 
+  for (const r of regels) r.cat = r.cat || categorie(r.label);
   return regels;
+}
+
+export const CATEGORIEEN = { stroom: 'Stroomprijs (opslag)', terug: 'Teruglevering', gas: 'Gasprijs (opslag)', vast: 'Vaste leveringskosten', overheid: 'Belasting en netbeheer', laden: 'Vergoeding laden', eenmalig: 'Eenmalig (korting/opzeg)' };
+function categorie(l) {
+  if (l.startsWith('Stroom')) return 'stroom';
+  if (l.startsWith('Teruglever') || l.startsWith('Saldering')) return 'terug';
+  if (l.startsWith('Gas')) return 'gas';
+  if (l.startsWith('Vaste')) return 'vast';
+  if (l.startsWith('Vergoeding werkgever')) return 'laden';
+  return 'overheid';
 }
 
 /** Totale kosten voor de horizon, inclusief eenmalige posten. */
@@ -168,8 +180,8 @@ export function vergelijkContract(contract, profiel, markt, tarieven, startISO, 
     return { ...p, tarieven: t, regels: kostenPeriode(contract, profiel, markt, t, p.fractie) };
   });
   const eenmalig = [];
-  if (contract.korting) eenmalig.push({ label: 'Welkomstkorting', bedrag: -contract.korting, soort: contract.bron?.soort === 'leverancier' ? 'bevestigd' : 'schatting' });
-  if (opties.overstapKosten) eenmalig.push({ label: 'Opzegvergoeding huidig contract', bedrag: opties.overstapKosten, soort: 'bevestigd' });
+  if (contract.korting) eenmalig.push({ label: 'Welkomstkorting', cat: 'eenmalig', bedrag: -contract.korting, soort: contract.bron?.soort === 'leverancier' ? 'bevestigd' : 'schatting' });
+  if (opties.overstapKosten) eenmalig.push({ label: 'Opzegvergoeding huidig contract', cat: 'eenmalig', bedrag: opties.overstapKosten, soort: 'bevestigd' });
   const totaal = r2(delen.reduce((s, d) => s + d.regels.reduce((a, r) => a + r.bedrag, 0), 0) + eenmalig.reduce((a, r) => a + r.bedrag, 0));
   const schattingAandeel = (() => {
     const all = delen.flatMap((d) => d.regels).concat(eenmalig);
@@ -197,15 +209,38 @@ export function zekerheid(contract, markt, vandaagISO) {
   return { niveau, redenen };
 }
 
+/** Ontbrekende gegevens die de berekening onmogelijk maken. */
+export function controleerContract(c, profiel) {
+  const f = [], dyn = c.type === 'dynamisch', ok = (x) => typeof x === 'number' && Number.isFinite(x);
+  if (!c.stroom) return ['stroomgegevens ontbreken'];
+  if (dyn ? !ok(c.stroom.opslag) : !ok(c.stroom.tarief)) f.push(dyn ? 'opslag stroom' : 'stroomtarief');
+  if (profiel.gas > 0 && (dyn ? !ok(c.gas?.opslag) : !ok(c.gas?.tarief))) f.push(dyn ? 'opslag gas' : 'gastarief');
+  return f;
+}
+
+/** Verschil per kostensoort: positief = het alternatief is daar goedkoper. */
+export function verschil(basis, rij) {
+  const som = (v) => { const o = {}; for (const r of v.delen.flatMap((d) => d.regels).concat(v.eenmalig)) o[r.cat] = (o[r.cat] || 0) + r.bedrag; return o; };
+  const a = som(basis), b = som(rij);
+  return Object.keys({ ...a, ...b }).map((cat) => ({ cat, label: CATEGORIEEN[cat] || cat, bedrag: r2((a[cat] || 0) - (b[cat] || 0)) }))
+    .filter((x) => Math.abs(x.bedrag) >= 1).sort((x, y) => Math.abs(y.bedrag) - Math.abs(x.bedrag));
+}
+
 /** Volledige vergelijking: huidig contract tegen alle aanbiedingen. */
 export function analyse({ profiel, huidig, aanbiedingen, prijzen, tarieven, instellingen, vandaagISO }) {
+  const fh = controleerContract(huidig, profiel);
+  if (fh.length) return { fout: 'Bij je huidige contract ontbreekt: ' + fh.join(', ') + '. Vul dit aan onder Gegevens.', foutPlek: 'huidig' };
   const markt = bepaalMarkt(profiel, prijzen, huidig, tarieven);
   const start = startDatum(vandaagISO, instellingen?.overstapDagen ?? 21);
   const basis = vergelijkContract(huidig, profiel, markt, tarieven, start);
   const opzeg = huidig.opzegvergoeding || 0;
-  const rijen = aanbiedingen.filter((a) => !a.verborgen && !verlopen(a, vandaagISO)).map((a) => {
+  const actief = aanbiedingen.filter((a) => !a.verborgen && !verlopen(a, vandaagISO));
+  const onvolledig = actief.filter((a) => controleerContract(a, profiel).length).map((a) => ({ naam: a.naam, mist: controleerContract(a, profiel) }));
+  const rijen = actief.filter((a) => !controleerContract(a, profiel).length).map((a) => {
     const v = vergelijkContract(a, profiel, markt, tarieven, start, { overstapKosten: opzeg });
-    return { ...v, besparing: r2(basis.totaal - v.totaal), zekerheid: zekerheid(a, markt, vandaagISO) };
+    const r = { ...v, besparing: r2(basis.totaal - v.totaal), zekerheid: zekerheid(a, markt, vandaagISO) };
+    r.verschil = verschil(basis, r);
+    return r;
   }).sort((x, y) => y.besparing - x.besparing);
   const drempel = instellingen?.drempel ?? 100;
   const beste = rijen.find((r) => r.zekerheid.niveau !== 'laag') || rijen[0];
@@ -214,7 +249,10 @@ export function analyse({ profiel, huidig, aanbiedingen, prijzen, tarieven, inst
   else if (beste.besparing >= drempel) advies = { soort: 'overstappen', tekst: `Overstappen naar ${beste.contract.naam} bespaart naar schatting €${Math.round(beste.besparing)} in de komende 12 maanden.`, wanneer: wanneerTekst(huidig, start) };
   else if (beste.besparing > 0) advies = { soort: 'twijfel', tekst: `${beste.contract.naam} is naar schatting €${Math.round(beste.besparing)} goedkoper, onder jouw drempel van €${drempel}. Blijven is prima.` };
   else advies = { soort: 'blijven', tekst: 'Je huidige contract is in deze vergelijking het voordeligst. Blijven.' };
-  return { markt, start, basis, rijen, beste, advies, drempel };
+  const hoogste = rijen[0];
+  if (hoogste && beste && hoogste !== beste && hoogste.besparing > beste.besparing)
+    advies.noot = `${hoogste.contract.naam} lijkt nog €${Math.round(hoogste.besparing - beste.besparing)} voordeliger, maar die tarieven zijn onzeker (zekerheid ${hoogste.zekerheid.niveau}). Controleer ze bij de leverancier.`;
+  return { markt, start, basis, rijen, beste, advies, drempel, onvolledig };
 }
 
 export function startDatum(vandaagISO, dagen) {
@@ -223,8 +261,8 @@ export function startDatum(vandaagISO, dagen) {
 }
 export function verlopen(a, vandaagISO) { return a.geldigTot && a.geldigTot < vandaagISO; }
 function wanneerTekst(huidig, start) {
-  if (huidig.einddatum) return `Je contract loopt tot ${huidig.einddatum}. Laat de overstap ingaan op of na die datum om opzegkosten te voorkomen.`;
-  return `Je huidige contract is ${huidig.opzegtermijn || 'kort'} opzegbaar zonder boete. Een overstap kan dus direct; reken op ingang rond ${start}. De nieuwe leverancier zegt je oude contract voor je op.`;
+  if (huidig.einddatum) return `Je contract loopt tot ${datumKort(huidig.einddatum)}. Laat de overstap ingaan op of na die datum om opzegkosten te voorkomen.`;
+  return `Je huidige contract is ${huidig.opzegtermijn || 'kort'} opzegbaar zonder boete. Een overstap kan dus direct; reken op ingang rond ${datumKort(start)}. De nieuwe leverancier zegt je oude contract voor je op.`;
 }
 
 /** Waarschuwingen voor op het startscherm en in de dagelijkse check. */
@@ -234,7 +272,7 @@ export function waarschuwingen({ huidig, aanbiedingen, prijzen, instellingen, va
   const n = instellingen?.dagenVoorEinde ?? 60;
   if (huidig.einddatum) {
     const d = dagenTot(huidig.einddatum);
-    if (d <= n) out.push({ soort: 'contract', ernst: d <= 14 ? 'hoog' : 'middel', tekst: `Je contract loopt over ${d} dagen af (${huidig.einddatum}).` });
+    if (d <= n) out.push({ soort: 'contract', ernst: d <= 14 ? 'hoog' : 'middel', tekst: `Je contract loopt over ${d} dagen af (${datumKort(huidig.einddatum)}).` });
   }
   for (const a of aanbiedingen) {
     if (a.verborgen || !a.geldigTot) continue;
@@ -243,16 +281,18 @@ export function waarschuwingen({ huidig, aanbiedingen, prijzen, instellingen, va
   }
   const sal = dagenTot('2027-01-01');
   if (sal > 0 && sal <= 90) out.push({ soort: 'info', ernst: 'middel', tekst: `De salderingsregeling stopt over ${sal} dagen (1 januari 2027). De vergelijking rekent daar al mee.` });
-  const geijkt = analyseResultaat && analyseResultaat.markt.ijkFactor;
+  const geijkt = analyseResultaat && analyseResultaat.markt && analyseResultaat.markt.ijkFactor;
   if (!prijzen || !prijzen.bijgewerkt) out.push({ soort: 'data', ernst: geijkt ? 'laag' : 'middel', tekst: geijkt ? 'Nog geen actuele beursprijzen opgehaald; de berekening is geijkt op jouw kosten tot nu toe.' : 'Er zijn nog geen actuele beursprijzen opgehaald. De berekening gebruikt jouw prijzen uit de jaarafrekening.' });
   else if (dagenTot(prijzen.bijgewerkt.slice(0, 10)) < -3) out.push({ soort: 'data', ernst: 'middel', tekst: `Beursprijzen zijn voor het laatst bijgewerkt op ${prijzen.bijgewerkt.slice(0, 10)}.` });
   const oud = aanbiedingen.filter((a) => !a.verborgen && a.bron?.datum && dagenTot(a.bron.datum) < -60);
-  if (oud.length) out.push({ soort: 'data', ernst: 'laag', tekst: `${oud.length} aanbieding(en) hebben tarieven ouder dan 60 dagen. Controleer ze bij de leverancier.` });
+  if (oud.length) out.push({ soort: 'data', ernst: 'laag', tekst: oud.length === 1 ? `De tarieven van ${oud[0].naam} zijn ouder dan 60 dagen. Controleer ze bij de leverancier.` : `${oud.length} aanbiedingen hebben tarieven ouder dan 60 dagen. Controleer ze bij de leverancier.` });
   const A = analyseResultaat;
-  if (A && A.advies.soort === 'overstappen') out.unshift({ soort: 'kans', ernst: 'hoog', tekst: A.advies.tekst });
+  if (A && A.advies && A.advies.soort === 'overstappen') out.unshift({ soort: 'kans', ernst: 'hoog', tekst: A.advies.tekst });
   return out;
 }
 
 function fmtK(x, eenheid = 'kWh') { return `${Math.round(x).toLocaleString('nl-NL')} ${eenheid}`; }
 function fmt4(x) { return '€' + nl(x, 4); }
+function euroNL(x) { return '€ ' + Math.round(x).toLocaleString('nl-NL'); }
+function datumKort(iso) { const [j, m, d] = String(iso).split('-'); return `${+d}-${+m}-${j}`; }
 function nl(x, d) { return Number(x).toFixed(d).replace('.', ','); }

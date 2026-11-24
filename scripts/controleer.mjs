@@ -23,6 +23,7 @@ const instellingen = { ...STANDAARD_INSTELLINGEN, ...(invoer.instellingen || {})
 if (instellingen.meldingen === false) { console.log('Meldingen staan uit in je profiel.'); process.exit(0); }
 
 const res = analyse({ profiel: invoer.profiel, huidig: invoer.huidig, aanbiedingen, prijzen, tarieven, instellingen, vandaagISO: vandaag });
+if (res.fout) { console.log('Profiel onvolledig: ' + res.fout); process.exit(1); }
 const w = waarschuwingen({ huidig: invoer.huidig, aanbiedingen, prijzen, instellingen, vandaagISO: vandaag, analyseResultaat: res });
 
 const staat = (() => { try { return JSON.parse(fs.readFileSync(STAAT)); } catch { return { gemeld: {} }; } })();
@@ -49,6 +50,12 @@ if (instellingen.weekoverzicht && new Date().getUTCDay() === 1) {
   berichten.push({ titel: 'Weekoverzicht energie', tekst: `${res.advies.tekst}\nHuidig contract komende 12 mnd: ~€${Math.round(res.basis.totaal)}.`, prioriteit: 2, tags: 'bar_chart' });
 }
 
+// 4. Testmelding op verzoek (Run workflow → 'Stuur een testmelding')
+if (process.env.TESTMELDING === 'true') {
+  berichten.push({ titel: 'Testmelding energie-app', tekst: `De meldingen werken.\nHuidig advies: ${res.advies.tekst}`, prioriteit: 3, tags: 'white_check_mark' });
+}
+if (!berichten.length) console.log(`Geen melding nodig (advies: ${res.advies.soort}; drempel wordt niet gehaald of er is niets nieuws).`);
+
 const onderwerp = process.env.NTFY_TOPIC;
 let verstuurd = 0;
 for (const m of berichten) {
@@ -58,7 +65,7 @@ for (const m of berichten) {
   if (process.env.APP_URL) q.set('click', process.env.APP_URL);
   if (process.env.MELDING_EMAIL) q.set('email', process.env.MELDING_EMAIL);
   const r = await fetch(`https://ntfy.sh/${encodeURIComponent(onderwerp)}?${q}`, { method: 'POST', body: m.tekst });
-  if (r.ok) verstuurd++; else console.log(`ntfy gaf HTTP ${r.status}`);
+  if (r.ok) verstuurd++; else console.log(`ntfy gaf HTTP ${r.status}: controleer het geheim NTFY_TOPIC.`);
 }
 fs.mkdirSync('.staat', { recursive: true });
 fs.writeFileSync(STAAT, JSON.stringify(staat));

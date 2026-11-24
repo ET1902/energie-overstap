@@ -14,6 +14,11 @@ async function getJson(url, pogingen = 3) {
   for (let i = 1; i <= pogingen; i++) {
     try {
       const res = await fetch(url, { headers: { 'User-Agent': 'energie-overstap (prive, 1x per dag)' } });
+      if (res.status === 429) { // te veel verzoeken: rustig wachten en opnieuw
+        const na = Number(res.headers.get('retry-after')) || 15 * i;
+        if (i === pogingen) throw new Error('HTTP 429 (te veel verzoeken)');
+        await wacht(Math.min(na, 60) * 1000); continue;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     } catch (e) {
@@ -62,16 +67,16 @@ function gemiddelden(reeks) { // reeks: [{t: ms, p: €/kWh excl. btw}]
 }
 
 // ---------- bronnen
-const maanden = (van, tot) => { const out = []; let d = new Date(Date.UTC(van.getUTCFullYear(), van.getUTCMonth(), 1)); while (d < tot) { const e = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)); out.push([d, e < tot ? e : tot]); d = e; } return out; };
+const maanden = (van, tot, stap = 1) => { const out = []; let d = new Date(Date.UTC(van.getUTCFullYear(), van.getUTCMonth(), 1)); while (d < tot) { const e = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + stap, 1)); out.push([d, e < tot ? e : tot]); d = e; } return out; };
 let stroomLicentie = null;
 
 async function stroomEnergyCharts(van, tot) {
   const reeks = [];
-  for (const [a, b] of maanden(van, tot)) {
-    const j = await getJson(`https://api.energy-charts.info/price?bzn=NL&start=${iso(a)}&end=${iso(new Date(b - 86400000))}`);
+  for (const [a, b] of maanden(van, tot, 3)) { // per kwartaal: weinig verzoeken
+    const j = await getJson(`https://api.energy-charts.info/price?bzn=NL&start=${iso(a)}&end=${iso(new Date(b - 86400000))}`, 4);
     stroomLicentie = j.license_info || stroomLicentie;
     (j.unix_seconds || []).forEach((s, i) => { if (s * 1000 >= a && s * 1000 < b) reeks.push({ t: s * 1000, p: j.price[i] == null ? null : j.price[i] / 1000 }); });
-    await wacht(400);
+    await wacht(+(process.env.EC_WACHT ?? 3000));
   }
   return reeks;
 }

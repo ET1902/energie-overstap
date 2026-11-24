@@ -49,13 +49,13 @@ a{color:var(--accent)}
 .b-hoog,.b-bevestigd{background:color-mix(in srgb,var(--goed) 18%,transparent);color:var(--goed)}
 .b-middel,.b-schatting{background:color-mix(in srgb,var(--let) 20%,transparent);color:var(--let)}
 .b-laag{background:color-mix(in srgb,var(--fout) 18%,transparent);color:var(--fout)}
-.balk{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.balk{display:grid;grid-template-columns:minmax(0,10.5em) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px;margin:6px 0}
 .balk .spoor{height:14px;background:var(--lijn);border-radius:7px;overflow:hidden}
 .balk .spoor{position:relative}.balk .spoor.div::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--zacht)}
 .balk .vul{position:absolute;top:0;height:100%;display:block}
 .balk .vul.plus{background:var(--goed);border-radius:0 7px 7px 0}.balk .vul.min{background:var(--fout);border-radius:7px 0 0 7px}
 .balk.beste .vul.plus{background:var(--accent)}.balk.beste .naam{font-weight:700}
-.balk .naam{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.balk .naam{overflow-wrap:anywhere;font-size:14px;line-height:1.3}
 .bedrag{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
 ul.melding{list-style:none;padding:0;margin:0}
 ul.melding li{padding:10px 12px;border-left:4px solid var(--let);background:color-mix(in srgb,var(--let) 8%,transparent);margin-bottom:8px;border-radius:6px;font-size:15px}
@@ -83,13 +83,44 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--kaart);border-t
 nav.tabs button{all:unset;cursor:pointer;text-align:center;font-size:12px;padding:8px 2px 10px;color:var(--zacht);min-height:44px}
 nav.tabs button svg{display:block;margin:0 auto 2px;width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
 nav.tabs button[aria-current=true]{color:var(--accent);font-weight:700}
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw}
 .toast.zicht{opacity:1}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 .fig{position:relative;height:120px}.fig svg{position:absolute;inset:0;width:100%;height:100%}
 details{margin:8px 0}summary{cursor:pointer;font-weight:600;min-height:32px}
 code,pre{font-size:13px;overflow-wrap:anywhere}pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--lijn);border-radius:8px;padding:10px;max-height:240px;overflow:auto}
 .leeg{text-align:center;padding:30px 10px}
+h3{margin:0 0 8px}h4{font-size:15px;margin:4px 0 8px}
+.oordeel.overstappen{background:color-mix(in srgb,var(--accent) 16%,var(--zee))}
+.regel{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button.i{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--zacht);color:var(--zacht);font:italic 700 12px/1 Georgia,serif;vertical-align:middle;margin-left:4px;flex:none;position:relative}
+button.i::after{content:"";position:absolute;inset:-12px}
+button.i:focus-visible{outline:3px solid var(--accent)}
+.rij{all:unset;cursor:pointer;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;width:100%;padding:12px 0;border-top:1px solid var(--lijn);min-height:44px}
+.rij:focus-visible{outline:3px solid var(--accent)}
+.rij .bedrag{font-weight:800;font-size:18px}
+.kern{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--lijn);font-size:15px}.kern span{color:var(--zacht)}.kern b{text-align:right}
+details.blok>summary,details.kaart>summary{font-size:17px;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px}
+details.blok>summary::-webkit-details-marker,details.kaart>summary::-webkit-details-marker{display:none}
+details.blok>summary::after,details.kaart>summary::after{content:"›";font-size:24px;transform:rotate(90deg);transition:transform .15s;color:var(--zacht)}
+details.blok[open]>summary::after,details.kaart[open]>summary::after{transform:rotate(-90deg)}
+details.blok[open]>summary,details.kaart[open]>summary{margin-bottom:12px}
+.invoer{display:flex;align-items:center;border:1px solid var(--lijn);border-radius:10px;background:var(--bg);padding:0 12px;min-height:44px}
+.invoer:focus-within{outline:3px solid var(--accent);outline-offset:1px}
+.invoer input{border:0;background:transparent;padding:10px 4px;outline:none;min-height:42px}
+.invoer span{color:var(--zacht);font-size:15px;white-space:nowrap}
+label.knop{display:inline-flex;align-items:center}
+.knop.gevaar{background:transparent;border-color:var(--fout);color:var(--fout)}
+.klein-knoppen .knop{font-size:14px;padding:8px 12px}
+dl.feiten{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;margin:0 0 10px;font-size:14px}dl.feiten dt{color:var(--zacht)}dl.feiten dd{margin:0}
+ul.onzeker{padding-left:18px;margin:6px 0}
+.optie.uitgezet b{opacity:.55}
+.optie .uitleg{margin-top:2px}
+ol.stappen{padding-left:20px;margin:0 0 10px}ol.stappen li{margin-bottom:12px}
+#uitlegVenster{position:fixed;inset:0;background:rgba(10,20,26,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px}
+#uitlegVenster[hidden]{display:none}
+#uitlegVenster .blad{background:var(--kaart);color:var(--ink);border-radius:16px;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-width:560px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+@media(min-width:700px){#uitlegVenster{align-items:center}}
 @media(max-width:600px){.stack thead{display:none}.stack tr{display:grid;padding-block:8px;border-bottom:1px solid var(--lijn)}.stack td{border:0;padding:2px 0}}
 </style>
 </head>
@@ -113,6 +144,7 @@ code,pre{font-size:13px;overflow-wrap:anywhere}pre{white-space:pre-wrap;backgrou
   <button data-tab="meer"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 004 0"/></svg>Meldingen</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="uitlegVenster" hidden role="dialog" aria-modal="true" aria-labelledby="uitlegTitel"><div class="blad"><h3 id="uitlegTitel"></h3><p id="uitlegTekst"></p><button class="knop" id="uitlegSluit" type="button">Begrepen</button></div></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

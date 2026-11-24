@@ -84,3 +84,23 @@ test('verlopen aanbiedingen worden niet meegenomen', () => {
   const res = analyse({ profiel: P, huidig: ANWB_DYNAMISCH, aanbiedingen: a, prijzen: null, tarieven: T, instellingen: {}, vandaagISO: '2026-11-24' });
   assert.equal(res.rijen.length, 0);
 });
+
+import { verschil, controleerContract } from '../calc.js';
+test('uitsplitsing per kostensoort telt op tot de besparing', () => {
+  const res = analyse({ profiel: { ...P, laadKwh: 800, laadVergoeding: 0.43 }, huidig: ANWB_DYNAMISCH, aanbiedingen: A, prijzen: null, tarieven: T, instellingen: {}, vandaagISO: '2026-11-24' });
+  for (const r of res.rijen) {
+    const som = verschil(res.basis, r).reduce((a, x) => a + x.bedrag, 0);
+    assert.ok(Math.abs(som - r.besparing) < 1.5, `${r.contract.naam}: ${som} vs ${r.besparing}`);
+  }
+});
+test('Zonnebonus: 10% over beurs + vergoeding', () => {
+  const zp = A.find((a) => a.id === 'zonneplan');
+  const r = kostenPeriode(zp, P, M, t27, 1).find((x) => x.label.startsWith('Teruglevering'));
+  const per = (0.04 * 1.21 + 0.02) * 1.10;
+  assert.ok(Math.abs(r.bedrag + 2000 * per) < 0.05);
+});
+test('onvolledig contract wordt gemeld en niet berekend', () => {
+  assert.deepEqual(controleerContract({ type: 'vast', stroom: {}, gas: {} }, P), ['stroomtarief', 'gastarief']);
+  const res = analyse({ profiel: P, huidig: { ...ANWB_DYNAMISCH, type: 'vast' }, aanbiedingen: A, prijzen: null, tarieven: T, instellingen: {}, vandaagISO: '2026-11-24' });
+  assert.ok(res.fout && res.fout.includes('stroomtarief'));
+});

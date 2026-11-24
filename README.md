@@ -29,6 +29,9 @@ Een privé-webapp (PWA) voor je iPhone en laptop. De app laat zien of en wanneer
 
 Vanaf dan draait de taak elke ochtend vanzelf.
 
+## Meldingen testen
+Ga naar *Actions → Dagelijkse energiecheck → Run workflow*, zet een vinkje bij **Stuur een testmelding** en klik op *Run workflow*. Binnen twee minuten krijg je een melding in de ntfy-app. Zonder testmelding blijft het stil zolang de besparing onder je drempel blijft. Dat is zo bedoeld.
+
 ## Dagelijks gebruik
 - **Overzicht** toont het oordeel (overstappen, kleine winst of blijven), de geschatte besparing, de zekerheid, aandachtspunten en de actuele beursprijs.
 - **Vergelijk** toont per contract de volledige berekening. Elke regel staat er met een label: *bevestigd* (vastgestelde tarieven) of *schatting* (vooral de beursprijzen).
@@ -71,6 +74,9 @@ Alles is gratis. GitHub Actions is gratis voor openbare repositories, net als Gi
 - Hoe de prijzen over de dag en het jaar verdeeld zijn (meer verbruik ’s avonds, zon midden op de dag) is benaderd. De app ijkt die verdeling op jouw jaarafrekening.
 - De startlijst met aanbiedingen komt deels van derden. Dat zie je aan de zekerheid ‘laag’ of ‘middel’. Controleer een aanbod altijd bij de leverancier voordat je overstapt.
 - Dit is geen financieel advies.
+
+## App bijwerken naar een nieuwe versie
+Upload de nieuwe bestanden via *Add file → Upload files*. Bestanden met dezelfde naam worden dan overschreven. Upload `data/prijzen.json` **niet**: dat bestand houdt de dagelijkse taak zelf bij. Een gewijzigd `.github/workflows/dagelijks.yml` zet je erin door dat bestand op GitHub te openen, op het potloodje te tikken en de nieuwe inhoud te plakken. Je gegevens in de app blijven gewoon staan.
 
 ## Voor ontwikkelaars
 ```
