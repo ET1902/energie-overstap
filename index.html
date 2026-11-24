@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Energie overstap</title>
+<meta name="description" content="Privé-app: wanneer loont overstappen naar een andere energieleverancier?">
+<meta name="theme-color" content="#13242e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Energie">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+/*
+VOICE: rustig en precies, als een goed rekenblad van de Consumentenbond — de uitkomst eerst, daarna de som.
+IDEA: een meterkast-kaart: één groot oordeel, daaronder de meterstanden en de berekening per regel.
+PICTURE: de besparing als groot getal met een staafvergelijking van jaarkosten per contract.
+COLOUR and TYPE: zee #bfe3ee, land #fbfbf2, inkt #13242e, accent magenta #d6127e, contourbruin #a8551b; systeemletter (werkt offline).
+LAYOUT: één kolom op de iPhone met tabbalk onderin; op brede schermen kaart links, berekening rechts.
+*/
+:root{color-scheme:light dark;
+--bg:light-dark(#fbfbf2,#0d1c24);--kaart:light-dark(#ffffff,#13242e);--ink:light-dark(#13242e,#e9efe9);--zacht:light-dark(#53636b,#9fb2b8);
+--zee:light-dark(#bfe3ee,#1d4352);--lijn:light-dark(#dfe3d6,#26404c);--accent:#d6127e;--bruin:light-dark(#a8551b,#e0955c);
+--goed:light-dark(#0b6b4f,#5fd0a5);--let:light-dark(#9a5b00,#f0b357);--fout:light-dark(#b3261e,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow-x:clip;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{background:#13242e;color:#fbfbf2;padding:calc(14px + env(safe-area-inset-top)) max(5vw,16px) 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.01em}
+header .status{margin-left:auto;font-size:13px;opacity:.85;display:flex;gap:8px;align-items:center}
+.stip{width:9px;height:9px;border-radius:50%;background:#5fd0a5;display:inline-block}.stip.uit{background:#f0b357}
+main{max-width:1100px;margin:0 auto;padding:0 max(4vw,14px)}
+section.scherm{display:none;padding-top:18px}section.scherm.actief{display:block}
+h2{font-size:clamp(26px,5vw,36px);line-height:1.1;margin:6px 0 12px;text-wrap:balance}
+h3{font-size:18px;margin:24px 0 8px}
+p{margin:0 0 12px}.klein{font-size:13px;color:var(--zacht)}
+a{color:var(--accent)}
+.kaart{background:var(--kaart);border:1px solid var(--lijn);border-radius:14px;padding:18px;margin-bottom:14px}
+.oordeel{background:var(--zee);border:0;padding:22px}
+.oordeel .label{font-size:14px;font-weight:600;color:var(--bruin)}
+.oordeel .groot{font-size:clamp(44px,12vw,72px);font-weight:800;line-height:1;margin:6px 0;font-variant-numeric:tabular-nums}
+.oordeel .groot small{font-size:18px;font-weight:600}
+.raster{display:grid;gap:14px}
+@media(min-width:860px){.raster.twee{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}
+.b-hoog,.b-bevestigd{background:color-mix(in srgb,var(--goed) 18%,transparent);color:var(--goed)}
+.b-middel,.b-schatting{background:color-mix(in srgb,var(--let) 20%,transparent);color:var(--let)}
+.b-laag{background:color-mix(in srgb,var(--fout) 18%,transparent);color:var(--fout)}
+.balk{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.balk .spoor{height:14px;background:var(--lijn);border-radius:7px;overflow:hidden}
+.balk .spoor{position:relative}.balk .spoor.div::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--zacht)}
+.balk .vul{position:absolute;top:0;height:100%;display:block}
+.balk .vul.plus{background:var(--goed);border-radius:0 7px 7px 0}.balk .vul.min{background:var(--fout);border-radius:7px 0 0 7px}
+.balk.beste .vul.plus{background:var(--accent)}.balk.beste .naam{font-weight:700}
+.balk .naam{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bedrag{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+ul.melding{list-style:none;padding:0;margin:0}
+ul.melding li{padding:10px 12px;border-left:4px solid var(--let);background:color-mix(in srgb,var(--let) 8%,transparent);margin-bottom:8px;border-radius:6px;font-size:15px}
+ul.melding li.hoog{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+ul.melding li.laag{border-color:var(--lijn);background:transparent}
+.optie{border-top:1px solid var(--lijn)}
+.optie>button{all:unset;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;width:100%;padding:14px 0;min-height:44px}
+.optie>button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.optie .verschil{font-weight:700}.pos{color:var(--goed)}.neg{color:var(--fout)}
+.detail{display:none;padding:0 0 16px}.optie.open .detail{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--lijn);text-align:left;vertical-align:top}
+td.bedrag,th.bedrag{text-align:right}
+.uitleg{font-size:12px;color:var(--zacht);display:block}
+form .veld{display:grid;gap:4px;margin-bottom:12px}
+label{font-size:14px;font-weight:600}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--lijn);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.velden{display:grid;gap:0 14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.knop{font:inherit;font-size:15px;font-weight:600;border-radius:10px;padding:10px 16px;min-height:44px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+.knop.licht{background:transparent;color:var(--ink)}.knop.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.knoppen{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.schakel{display:flex;align-items:center;gap:10px;min-height:44px}.schakel input{width:24px;height:24px;min-height:0}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--kaart);border-top:1px solid var(--lijn);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.tabs button{all:unset;cursor:pointer;text-align:center;font-size:12px;padding:8px 2px 10px;color:var(--zacht);min-height:44px}
+nav.tabs button svg{display:block;margin:0 auto 2px;width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav.tabs button[aria-current=true]{color:var(--accent);font-weight:700}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw}
+.toast.zicht{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.fig{position:relative;height:120px}.fig svg{position:absolute;inset:0;width:100%;height:100%}
+details{margin:8px 0}summary{cursor:pointer;font-weight:600;min-height:32px}
+code,pre{font-size:13px;overflow-wrap:anywhere}pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--lijn);border-radius:8px;padding:10px;max-height:240px;overflow:auto}
+.leeg{text-align:center;padding:30px 10px}
+@media(max-width:600px){.stack thead{display:none}.stack tr{display:grid;padding-block:8px;border-bottom:1px solid var(--lijn)}.stack td{border:0;padding:2px 0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Energie overstap</h1>
+  <div class="status"><span class="stip" id="netStip"></span><span id="statusTekst">Laden…</span></div>
+</header>
+<main>
+  <section class="scherm actief" id="overzicht" aria-label="Overzicht"></section>
+  <section class="scherm" id="vergelijken" aria-label="Vergelijken"></section>
+  <section class="scherm" id="gegevens" aria-label="Mijn gegevens"></section>
+  <section class="scherm" id="aanbod" aria-label="Aanbiedingen"></section>
+  <section class="scherm" id="meer" aria-label="Meldingen en info"></section>
+</main>
+<nav class="tabs" aria-label="Hoofdmenu">
+  <button data-tab="overzicht" aria-current="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/><path d="M10 20v-6h4v6"/></svg>Overzicht</button>
+  <button data-tab="vergelijken"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Vergelijk</button>
+  <button data-tab="gegevens"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>Gegevens</button>
+  <button data-tab="aanbod"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Aanbod</button>
+  <button data-tab="meer"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 004 0"/></svg>Meldingen</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

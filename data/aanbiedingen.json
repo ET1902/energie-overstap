@@ -1,0 +1,195 @@
+{
+ "peildatum": "2026-11-24",
+ "toelichting": "Startlijst met bron per aanbieding. Controleer altijd bij de leverancier; bedragen incl. btw, excl. energiebelasting.",
+ "aanbiedingen": [
+  {
+   "id": "frank",
+   "naam": "Frank Energie dynamisch",
+   "leverancier": "Frank Energie",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.0182,
+    "vast": 7.25,
+    "terugVergoeding": 0.0182,
+    "terugKosten": 0,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.0799,
+    "vast": 7.25
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Frank Energie, eigen vergelijkingstabel",
+    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "soort": "leverancier",
+    "datum": "2026-11-24"
+   },
+   "onzeker": [
+    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
+    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
+    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd.",
+    "Een andere bron noemt €7,00 vaste kosten; Frank noemt ook een mogelijke inkoopvergoeding op teruglevering in de voorwaarden."
+   ]
+  },
+  {
+   "id": "zonneplan",
+   "naam": "Zonneplan dynamisch",
+   "leverancier": "Zonneplan",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.02,
+    "vast": 6.25,
+    "terugVergoeding": 0.02,
+    "terugKosten": 0,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.08,
+    "vast": 6.25
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
+    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "soort": "derde",
+    "datum": "2026-11-24"
+   },
+   "onzeker": [
+    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
+    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
+    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
+   ]
+  },
+  {
+   "id": "nextenergy",
+   "naam": "NextEnergy dynamisch",
+   "leverancier": "NextEnergy",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.0219,
+    "vast": 5.99,
+    "terugVergoeding": 0,
+    "terugKosten": 0,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.0799,
+    "vast": 5.99
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
+    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "soort": "derde",
+    "datum": "2026-11-24"
+   },
+   "onzeker": [
+    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
+    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
+    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
+   ]
+  },
+  {
+   "id": "tibber",
+   "naam": "Tibber dynamisch",
+   "leverancier": "Tibber",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.0248,
+    "vast": 5.99,
+    "terugVergoeding": 0,
+    "terugKosten": 0,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.0884,
+    "vast": 5.99
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
+    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "soort": "derde",
+    "datum": "2026-11-24"
+   },
+   "onzeker": [
+    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
+    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
+    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd.",
+    "Andere bronnen noemen €6,99 (stroom) + €5,99 (gas) vaste kosten en een opslag van €0,018.",
+    "Tibber betaalt vanaf 2027 volgens derden de kale beursprijs; of daar btw bij zit is onduidelijk."
+   ]
+  },
+  {
+   "id": "eneco",
+   "naam": "Eneco dynamisch",
+   "leverancier": "Eneco",
+   "type": "dynamisch",
+   "stroom": {
+    "opslag": 0.0185,
+    "vast": 7.0,
+    "terugVergoeding": 0,
+    "terugKosten": 0.0185,
+    "terugBtw": true
+   },
+   "gas": {
+    "opslag": 0.1068,
+    "vast": 7.0
+   },
+   "korting": 0,
+   "looptijdMnd": 0,
+   "geldigTot": null,
+   "bron": {
+    "naam": "Vergelijkingstabel dynamische contracten op frankenergie.nl",
+    "url": "https://www.frankenergie.nl/nl/dynamisch-energiecontract/dynamisch-energiecontract-vergelijken",
+    "soort": "derde",
+    "datum": "2026-11-24"
+   },
+   "onzeker": [
+    "Datum van de tabel staat er niet bij (opgehaald op 24-11-2026).",
+    "Vaste kosten aangenomen per aansluiting (stroom én gas) en bedragen incl. btw.",
+    "Terugleverregeling vanaf 2027 nog niet bij de leverancier zelf gecontroleerd."
+   ]
+  },
+  {
+   "id": "anwb-model-vast",
+   "naam": "ANWB modelcontract (stroom 1 jaar vast + gas variabel)",
+   "leverancier": "ANWB Energie",
+   "type": "vast",
+   "stroom": {
+    "tarief": 0.324885,
+    "tariefDal": 0.324885,
+    "vast": 48.0,
+    "terugVergoeding": 0.01,
+    "terugKosten": 0.07
+   },
+   "gas": {
+    "tarief": 1.063832,
+    "vast": 9.75
+   },
+   "korting": 0,
+   "looptijdMnd": 12,
+   "geldigTot": null,
+   "bron": {
+    "naam": "ANWB modelcontract 2026 (tarieven vanaf 01-09-2026)",
+    "url": "https://www.anwb.nl/energie/modelcontract-2026",
+    "soort": "leverancier",
+    "datum": "2026-09-01"
+   },
+   "onzeker": [
+    "Dit zijn de 2026-voorwaarden; voor 2027 kunnen terugleverkosten en tarieven anders zijn.",
+    "Tarieven omgerekend naar excl. energiebelasting 2026."
+   ],
+   "toelichting": "Voorbeeld van een vast/variabel contract, vooral als referentie. Voer echte aanbiedingen in via 'Aanbiedingen'."
+  }
+ ]
+}

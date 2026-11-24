@@ -1,0 +1,1 @@
+{ "name": "energie-overstap", "private": true, "type": "module", "scripts": { "test": "node --test test/*.test.mjs", "prijzen": "node scripts/haal-prijzen.mjs", "controleer": "node scripts/controleer.mjs" } }

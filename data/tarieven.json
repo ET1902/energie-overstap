@@ -1,0 +1,25 @@
+{
+  "toelichting": "Overheidstarieven en netbeheerkosten, incl. 21% btw. Gelijk voor iedere leverancier. Netbeheer: Enexis, stroom t/m 3x25A en gas G4/G6. Verdeling stroom/gas geschat op 66%/34% (verhouding uit jouw jaarafrekening 2025).",
+  "jaren": {
+    "2026": {
+      "ebStroom": 0.110848, "ebGas": 0.726799, "vermindering": 628.96,
+      "netStroom": 489.11, "netGas": 253.09, "netDefinitief": true,
+      "groenGas": 0, "saldering": true,
+      "bronnen": [
+        {"naam": "ANWB modelcontract 2026 (energiebelasting incl. btw)", "url": "https://www.anwb.nl/energie/modelcontract-2026"},
+        {"naam": "Keuze.nl: netbeheerkosten Enexis 2026 definitief €742,20 (stroom + gas)", "url": "https://www.keuze.nl/nieuws/netbeheerkosten-2027-per-netbeheerder"}
+      ]
+    },
+    "2027": {
+      "ebStroom": 0.1065, "ebGas": 0.7457, "vermindering": 628.69,
+      "netStroom": 569.65, "netGas": 294.77, "netDefinitief": false,
+      "groenGas": 0.018, "saldering": false,
+      "bronnen": [
+        {"naam": "Energievergelijk.nl: belastingtarieven 2027 (Belastingplan 2027)", "url": "https://www.energievergelijk.nl/nieuws/meer-belasting-op-gas-minder-op-stroom-energierekening-stijgt-in-2027"},
+        {"naam": "Keuze.nl: voorstel netbeheerkosten Enexis 2027 €864,42 (ACM-besluit 27-11-2026)", "url": "https://www.keuze.nl/nieuws/netbeheerkosten-2027-per-netbeheerder"},
+        {"naam": "Rijksoverheid: salderingsregeling stopt per 1-1-2027", "url": "https://www.rijksoverheid.nl/themas/klimaat-milieu-en-natuur/energie-thuis/salderingsregeling"}
+      ]
+    }
+  },
+  "peildatum": "2026-11-24"
+}
