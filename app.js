@@ -533,7 +533,7 @@ function renderMeer() {
   <div class="kaart"><h3>Pushmeldingen op je iPhone ${i('ntfy')}</h3>
     <ol class="stappen">
       <li><span>Geheim onderwerp:</span> <code>${esc(s.ntfyOnderwerp || 'nog niet aangemaakt')}</code>
-        <div class="knoppen klein-knoppen"><button class="knop licht" id="maakNtfy" type="button">${s.ntfyOnderwerp ? 'Nieuw onderwerp' : 'Maak aan'}</button>${s.ntfyOnderwerp ? '<button class="knop licht" id="kopNtfy" type="button">Kopieer</button>' : ''}</div></li>
+        <div class="knoppen klein-knoppen"><button class="knop licht" id="maakNtfy" type="button">${s.ntfyOnderwerp ? 'Nieuw onderwerp' : 'Maak aan'}</button>${s.ntfyOnderwerp ? '<button class="knop licht" id="kopNtfy" type="button">Kopieer</button><button class="knop licht" id="testNtfy" type="button">Test vanaf deze telefoon</button>' : ''}</div></li>
       <li>Abonneer je in de ntfy-app op dit onderwerp en zet het in GitHub als geheim <code>NTFY_TOPIC</code>.</li>
       <li>Zet je gegevens in GitHub als geheim <code>PROFIEL_JSON</code>: <button class="knop accent" id="kopProfiel" type="button">Kopieer gegevens voor GitHub</button></li>
       <li>Test het: GitHub → Actions → Dagelijkse energiecheck → Run workflow → vink <i>Stuur een testmelding</i> aan.${repoUrl() ? ` <a href="${esc(repoUrl())}/actions/workflows/dagelijks.yml" target="_blank" rel="noopener">Open op GitHub</a>` : ''}</li>
@@ -560,6 +560,13 @@ function renderMeer() {
   $('#maakNtfy').onclick = () => { const b = new Uint8Array(12); crypto.getRandomValues(b); staat.instellingen.ntfyOnderwerp = 'energie-' + Array.from(b, (x) => x.toString(36).padStart(2, '0')).join('').slice(0, 20); bewaar(); render(); toast('Nieuw onderwerp. Zet het ook in ntfy en GitHub.'); };
   $('#kopProfiel').onclick = () => kopieer(JSON.stringify(exportObject()), 'Gekopieerd. Plak het in GitHub als geheim PROFIEL_JSON.');
   if ($('#kopNtfy')) $('#kopNtfy').onclick = () => kopieer(s.ntfyOnderwerp, 'Onderwerp gekopieerd');
+  if ($('#testNtfy')) $('#testNtfy').onclick = async () => {
+    // Test alleen de kant van de telefoon: app → ntfy.sh → ntfy-app. Er gaat alleen deze testtekst mee.
+    try {
+      const r = await fetch('https://ntfy.sh/' + encodeURIComponent(s.ntfyOnderwerp.trim()) + '?' + new URLSearchParams({ title: 'Test vanaf je telefoon', tags: 'white_check_mark' }), { method: 'POST', body: 'Ontvang je dit? Dan is de ntfy-app goed ingesteld.' });
+      toast(r.ok ? 'Verstuurd. Binnen een paar seconden hoort er een melding te komen.' : 'ntfy gaf foutcode ' + r.status);
+    } catch { toast('ntfy.sh niet bereikbaar. Ben je online?'); }
+  };
 }
 
 // ---------- import/export

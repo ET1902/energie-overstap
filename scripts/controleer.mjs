@@ -10,9 +10,33 @@ const lees = (p) => JSON.parse(fs.readFileSync(new URL(p, import.meta.url)));
 const STAAT = '.staat/laatste.json';
 const vandaag = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
 
-if (!process.env.PROFIEL_JSON) { console.log('Geen PROFIEL_JSON ingesteld; persoonlijke check overgeslagen.'); process.exit(0); }
+// Geheimen worden vaak met een spatie of regeleinde geplakt: die halen we weg.
+const onderwerp = (process.env.NTFY_TOPIC || '').trim();
+const email = (process.env.MELDING_EMAIL || '').trim();
+const profielTekst = (process.env.PROFIEL_JSON || '').trim();
+const test = process.env.TESTMELDING === 'true';
+// Diagnose zonder geheimen te tonen:
+console.log(`Instellingen: NTFY_TOPIC ${onderwerp ? `ingesteld (${onderwerp.length} tekens${onderwerp.startsWith('energie-') ? ', gemaakt in de app' : ''})` : 'ONTBREEKT'}; PROFIEL_JSON ${profielTekst ? 'ingesteld' : 'ONTBREEKT'}; MELDING_EMAIL ${email ? 'ingesteld' : 'niet ingesteld'}; testmelding ${test ? 'ja' : 'nee'}.`);
+
+async function stuur(m) {
+  if (!onderwerp) return false;
+  // Parameters via de URL (ntfy ondersteunt dat), zodat tekens als € geen probleem geven in HTTP-headers.
+  const q = new URLSearchParams({ title: m.titel, priority: String(m.prioriteit), tags: m.tags });
+  if (process.env.APP_URL) q.set('click', process.env.APP_URL + (m.pad || ''));
+  if (email) q.set('email', email);
+  try {
+    const r = await fetch(`https://ntfy.sh/${encodeURIComponent(onderwerp)}?${q}`, { method: 'POST', body: m.tekst });
+    if (!r.ok) console.log(`ntfy gaf HTTP ${r.status}. Controleer het geheim NTFY_TOPIC.`);
+    return r.ok;
+  } catch (e) { console.log('ntfy niet bereikbaar: ' + e.message); return false; }
+}
+
+if (!profielTekst) {
+  if (test) console.log(`Testmelding zonder profiel: ${(await stuur({ titel: 'Testmelding energie-app', tekst: 'De verbinding met je telefoon werkt. Zet nog het geheim PROFIEL_JSON in GitHub voor de persoonlijke check.', prioriteit: 3, tags: 'white_check_mark' })) ? 'verstuurd' : 'NIET verstuurd'}.`);
+  console.log('Geen PROFIEL_JSON ingesteld; persoonlijke check overgeslagen.'); process.exit(0);
+}
 let invoer;
-try { invoer = JSON.parse(process.env.PROFIEL_JSON); } catch { console.log('PROFIEL_JSON is geen geldige JSON. Kopieer hem opnieuw uit de app.'); process.exit(1); }
+try { invoer = JSON.parse(profielTekst); } catch { console.log('PROFIEL_JSON is geen geldige JSON. Kopieer hem opnieuw uit de app (Meldingen → Kopieer gegevens voor GitHub).'); if (test) await stuur({ titel: 'Testmelding energie-app', tekst: 'Je telefoon is bereikbaar, maar PROFIEL_JSON in GitHub is ongeldig. Kopieer hem opnieuw uit de app.', prioriteit: 3, tags: 'warning' }); process.exit(1); }
 
 const tarieven = lees('../data/tarieven.json');
 const prijzen = (() => { try { return lees('../data/prijzen.json'); } catch { return null; } })();
@@ -20,7 +44,7 @@ const basisAanbod = lees('../data/aanbiedingen.json').aanbiedingen;
 const verborgen = new Set(invoer.verborgen || []);
 const aanbiedingen = [...basisAanbod.filter((a) => !verborgen.has(a.id)), ...(invoer.eigenAanbiedingen || [])];
 const instellingen = { ...STANDAARD_INSTELLINGEN, ...(invoer.instellingen || {}) };
-if (instellingen.meldingen === false) { console.log('Meldingen staan uit in je profiel.'); process.exit(0); }
+if (instellingen.meldingen === false && !test) { console.log('Meldingen staan uit in je profiel.'); process.exit(0); }
 
 const res = analyse({ profiel: invoer.profiel, huidig: invoer.huidig, aanbiedingen, prijzen, tarieven, instellingen, vandaagISO: vandaag });
 if (res.fout) { console.log('Profiel onvolledig: ' + res.fout); process.exit(1); }
@@ -57,22 +81,13 @@ if (instellingen.standHerinnering !== false && dagVanMaand === 1 && !staat.gemel
   staat.gemeld['stand:' + vandaag.slice(0, 7)] = { datum: vandaag };
 }
 // 5. Testmelding op verzoek (Run workflow → 'Stuur een testmelding')
-if (process.env.TESTMELDING === 'true') {
+if (test) {
   berichten.push({ titel: 'Testmelding energie-app', tekst: `De meldingen werken.\nHuidig advies: ${res.advies.tekst}`, prioriteit: 3, tags: 'white_check_mark' });
 }
 if (!berichten.length) console.log(`Geen melding nodig (advies: ${res.advies.soort}; drempel wordt niet gehaald of er is niets nieuws).`);
 
-const onderwerp = process.env.NTFY_TOPIC;
 let verstuurd = 0;
-for (const m of berichten) {
-  if (!onderwerp) break;
-  // Parameters via de URL (ntfy ondersteunt dat), zodat tekens als € geen probleem geven in HTTP-headers.
-  const q = new URLSearchParams({ title: m.titel, priority: String(m.prioriteit), tags: m.tags });
-  if (process.env.APP_URL) q.set('click', process.env.APP_URL + (m.pad || ''));
-  if (process.env.MELDING_EMAIL) q.set('email', process.env.MELDING_EMAIL);
-  const r = await fetch(`https://ntfy.sh/${encodeURIComponent(onderwerp)}?${q}`, { method: 'POST', body: m.tekst });
-  if (r.ok) verstuurd++; else console.log(`ntfy gaf HTTP ${r.status}: controleer het geheim NTFY_TOPIC.`);
-}
+for (const m of berichten) if (await stuur(m)) verstuurd++;
 fs.mkdirSync('.staat', { recursive: true });
 fs.writeFileSync(STAAT, JSON.stringify(staat));
 console.log(`Check uitgevoerd op ${vandaag}. Nieuwe meldingen: ${berichten.length}, verstuurd: ${verstuurd}${onderwerp ? '' : ' (geen NTFY_TOPIC ingesteld)'}.`);
